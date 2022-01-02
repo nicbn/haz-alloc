@@ -1,5 +1,7 @@
 # haz-alloc
 
+![License](https://shields.io/crates/l/haz-alloc)
+
 haz-alloc is a general-purpose allocator written in Rust, inspired by jemalloc.
 
 Currently this should not be considered production-ready.
@@ -8,9 +10,14 @@ Currently this should not be considered production-ready.
 
 ### `haz-alloc`
 
+[![Crate](https://shields.io/crates/v/haz-alloc)](https://crates.io/crates/haz-alloc)
+
 Provides out-of-the-box allocation. Currently available for Windows only.
 
 ### `haz-alloc-core`
+
+[![Crate](https://shields.io/crates/v/haz-alloc-core)](https://crates.io/crates/haz-alloc-core)
+[![Documentation](https://shields.io/docsrs/haz-alloc-core)](https://docs.rs/haz-alloc-core)
 
 Implementation of the allocator, needs some symbols to be provided in order to
 work.
