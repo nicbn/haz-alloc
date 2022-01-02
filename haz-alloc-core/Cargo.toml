@@ -3,6 +3,7 @@ name = "haz-alloc-core"
 version = "0.1.0"
 edition = "2018"
 license = "MIT OR Apache-2.0"
+repository = "https://github.com/nicbn/haz-alloc"
 
 [dependencies]
 haz-alloc-internal = { version = "0.0.1", path = "../haz-alloc-internal" }
