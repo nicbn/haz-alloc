@@ -15,6 +15,10 @@ Provides out-of-the-box allocation. Currently available for Windows only.
 Implementation of the allocator, needs some symbols to be provided in order to
 work.
 
+### `haz-alloc-internal`
+
+Contains some internal code, not meant for user use.
+
 ## License
 
 Licensed under either of

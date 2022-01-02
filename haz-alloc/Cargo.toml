@@ -15,4 +15,4 @@ haz-alloc-core = { version = "0.1", path = "../haz-alloc-core" }
 cfg-if = "1"
 
 [dev-dependencies]
-haz-alloc-internal = { path = "../haz-alloc-internal" }
+haz-alloc-internal = { version = "0.0.1", path = "../haz-alloc-internal" }

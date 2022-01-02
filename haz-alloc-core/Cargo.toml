@@ -5,4 +5,4 @@ edition = "2018"
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-haz-alloc-internal = { path = "../haz-alloc-internal" }
+haz-alloc-internal = { version = "0.0.1", path = "../haz-alloc-internal" }
