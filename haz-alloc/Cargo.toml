@@ -1,0 +1,18 @@
+[package]
+name = "haz-alloc"
+version = "0.1.0"
+edition = "2018"
+license = "MIT OR Apache-2.0"
+
+[target.'cfg(windows)'.dependencies.winapi]
+version = "0.3"
+features = [
+    "memoryapi", "winnt", "sysinfoapi", "synchapi", "processthreadsapi", "fibersapi"
+]
+
+[dependencies]
+haz-alloc-core = { version = "0.1", path = "../haz-alloc-core" }
+cfg-if = "1"
+
+[dev-dependencies]
+haz-alloc-internal = { path = "../haz-alloc-internal" }

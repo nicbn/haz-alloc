@@ -1,0 +1,2 @@
+[workspace]
+members = ["haz-alloc", "haz-alloc-internal", "haz-alloc-core"]
