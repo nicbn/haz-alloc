@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/nicbn/haz-alloc"
+description = "A general-purpose allocator written in Rust, without system symbols"
+categories = ["memory-management", "no-std"]
 
 [dependencies]
 haz-alloc-internal = { version = "0.0.1", path = "../haz-alloc-internal" }

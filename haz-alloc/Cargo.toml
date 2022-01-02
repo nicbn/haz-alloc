@@ -4,6 +4,9 @@ version = "0.1.0"
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/nicbn/haz-alloc"
+description = "A general-purpose allocator written in Rust"
+keywords = ["alloc", "allocator", "allocation"]
+categories = ["memory-management", "no-std"]
 
 [target.'cfg(windows)'.dependencies.winapi]
 version = "0.3"
