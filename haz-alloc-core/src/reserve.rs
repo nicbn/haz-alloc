@@ -30,7 +30,10 @@ pub fn new(size: usize, ty: ReserveType) -> (usize, *mut ReserveHeader) {
 
     let offset = base.align_offset(RESERVE_ALIGN);
     let ptr = unsafe { base.add(offset) as *mut ReserveHeader };
-    unsafe { sys::__haz_alloc_mcommit(ptr as *mut u8, utils::page_size()) };
+    if unsafe { !sys::__haz_alloc_mcommit(ptr as *mut u8, utils::page_size()) } {
+        return (0, ptr::null_mut());
+    }
+    
     unsafe {
         ptr.write(ReserveHeader {
             offset: offset as u32,

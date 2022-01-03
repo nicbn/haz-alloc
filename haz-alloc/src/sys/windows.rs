@@ -18,7 +18,7 @@ unsafe impl Sync for Mutex {}
 
 #[no_mangle]
 pub unsafe fn __haz_alloc_mcommit(ptr: *mut u8, size: usize) -> bool {
-    !VirtualAlloc(ptr as _, size, MEM_RESERVE, PAGE_NOACCESS).is_null()
+    !VirtualAlloc(ptr as _, size, MEM_COMMIT, PAGE_READWRITE).is_null()
 }
 
 #[no_mangle]
