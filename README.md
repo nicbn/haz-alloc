@@ -11,8 +11,9 @@ Currently this should not be considered production-ready.
 ### `haz-alloc`
 
 [![Crate](https://shields.io/crates/v/haz-alloc)](https://crates.io/crates/haz-alloc)
+[![Documentation](https://shields.io/docsrs/haz-alloc)](https://docs.rs/haz-alloc)
 
-Provides out-of-the-box allocation. Currently available for Windows only.
+Provides out-of-the-box allocation. Available for Windows and Unix (only Linux tested so far).
 
 ### `haz-alloc-core`
 
