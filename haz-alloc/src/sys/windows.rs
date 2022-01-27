@@ -1,86 +1,80 @@
-use haz_alloc_core::sys::TlsCallback;
+use crate::sys_common;
+use haz_alloc_core::backend::TlsCallback;
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
-use std::sync::atomic::{AtomicU32, Ordering::*};
-use winapi::shared::minwindef::*;
-use winapi::um::fibersapi::*;
+use std::sync::atomic::AtomicU32;
+use std::sync::atomic::Ordering;
 use winapi::um::memoryapi::*;
-use winapi::um::processthreadsapi::*;
 use winapi::um::synchapi::*;
 use winapi::um::sysinfoapi::*;
 use winapi::um::winnt::*;
 
-struct Mutex(UnsafeCell<SRWLOCK>);
+pub struct Backend;
+
+unsafe impl haz_alloc_core::Backend for Backend {
+    type Mutex = Mutex;
+
+    const MUTEX_INIT: Mutex = Mutex(UnsafeCell::new(SRWLOCK_INIT));
+
+    fn mreserve(ptr: *mut u8, size: usize) -> *mut u8 {
+        unsafe { VirtualAlloc(ptr as _, size, MEM_RESERVE, PAGE_NOACCESS) as _ }
+    }
+
+    #[inline]
+    unsafe fn mcommit(ptr: *mut u8, size: usize) -> bool {
+        !VirtualAlloc(ptr as _, size, MEM_COMMIT, PAGE_READWRITE).is_null()
+    }
+
+    #[inline]
+    unsafe fn mdecommit(ptr: *mut u8, size: usize) {
+        VirtualFree(ptr as _, size, MEM_DECOMMIT);
+    }
+
+    #[inline]
+    unsafe fn munreserve(ptr: *mut u8, _: usize) {
+        VirtualFree(ptr as _, 0, MEM_RELEASE);
+    }
+
+    #[inline]
+    fn pagesize() -> usize {
+        static PAGESIZE: AtomicU32 = AtomicU32::new(0);
+
+        #[cold]
+        fn cold() -> u32 {
+            let mut data = MaybeUninit::uninit();
+            unsafe { GetSystemInfo(data.as_mut_ptr()) };
+
+            let size = unsafe { data.assume_init().dwPageSize };
+            PAGESIZE.store(size, Ordering::Relaxed);
+
+            size
+        }
+
+        match PAGESIZE.load(Ordering::Relaxed) {
+            0 => cold() as usize,
+            pagesize => pagesize as usize,
+        }
+    }
+
+    unsafe fn tls_attach(callback: *const TlsCallback) {
+        sys_common::tls_attach(callback)
+    }
+}
+
+pub struct Mutex(UnsafeCell<SRWLOCK>);
 
 unsafe impl Send for Mutex {}
 
 unsafe impl Sync for Mutex {}
 
-#[no_mangle]
-pub unsafe fn __haz_alloc_mcommit(ptr: *mut u8, size: usize) -> bool {
-    !VirtualAlloc(ptr as _, size, MEM_COMMIT, PAGE_READWRITE).is_null()
-}
-
-#[no_mangle]
-pub unsafe fn __haz_alloc_mreserve(ptr: *mut u8, size: usize) -> *mut u8 {
-    VirtualAlloc(ptr as _, size, MEM_RESERVE, PAGE_NOACCESS) as _
-}
-
-#[no_mangle]
-pub unsafe fn __haz_alloc_mdecommit(ptr: *mut u8, size: usize) {
-    VirtualFree(ptr as _, size, MEM_DECOMMIT);
-}
-
-#[no_mangle]
-pub unsafe fn __haz_alloc_munreserve(ptr: *mut u8) {
-    VirtualFree(ptr as _, 0, MEM_RELEASE);
-}
-
-#[no_mangle]
-pub unsafe fn __haz_alloc_pagesize() -> usize {
-    let mut data = MaybeUninit::uninit();
-    GetSystemInfo(data.as_mut_ptr());
-    data.assume_init().dwPageSize as usize
-}
-
-#[no_mangle]
-pub unsafe fn __haz_alloc_mutex_lock(mutex: *mut *mut u8) {
-    AcquireSRWLockExclusive(mutex as _)
-}
-
-#[no_mangle]
-pub unsafe fn __haz_alloc_mutex_unlock(mutex: *mut *mut u8) {
-    ReleaseSRWLockExclusive(mutex as _)
-}
-
-#[no_mangle]
-pub unsafe fn __haz_alloc_tls_attach(callback: *const TlsCallback) {
-    static KEY: AtomicU32 = AtomicU32::new(TLS_OUT_OF_INDEXES);
-    static MUTEX: Mutex = Mutex(UnsafeCell::new(SRWLOCK_INIT));
-
-    extern "system" fn destructor(p: LPVOID) {
-        let mut callback = p as *const TlsCallback;
-        while !callback.is_null() {
-            unsafe {
-                ((*callback).func)();
-                callback = (*callback).next.get();
-            }
-        }
+unsafe impl haz_alloc_core::backend::RawMutex for Mutex {
+    #[inline]
+    unsafe fn lock(&self) {
+        AcquireSRWLockExclusive(self.0.get())
     }
 
-    let mut key = KEY.load(Acquire);
-    if key == TLS_OUT_OF_INDEXES {
-        AcquireSRWLockExclusive(MUTEX.0.get());
-
-        key = KEY.load(Relaxed);
-        if key == TLS_OUT_OF_INDEXES {
-            key = FlsAlloc(Some(destructor));
-            KEY.store(key, Release);
-        }
-
-        ReleaseSRWLockExclusive(MUTEX.0.get());
+    #[inline]
+    unsafe fn unlock(&self) {
+        ReleaseSRWLockExclusive(self.0.get())
     }
-
-    (*callback).next.set(FlsGetValue(key) as _);
-    FlsSetValue(key, callback as _);
 }

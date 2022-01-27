@@ -1,12 +1,13 @@
 #![no_std]
 #![feature(thread_local, const_fn_fn_ptr_basics)]
+#![warn(clippy::all)]
 
-#[macro_use]
-mod utils;
 mod alloc;
+pub mod backend;
 mod bitset;
 mod huge;
 mod reserve;
 mod subhuge;
-pub mod sys;
+
 pub use self::alloc::*;
+pub use self::backend::Backend;

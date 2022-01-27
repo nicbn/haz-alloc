@@ -1,9 +1,8 @@
 use super::Arena;
-use crate::utils;
-use crate::{bitset, sys};
+use crate::backend::RawMutex;
+use crate::{bitset, Backend};
 use core::alloc::Layout;
 use core::cmp::Ordering;
-use core::pin::Pin;
 use core::{mem, ptr};
 use haz_alloc_internal::UsizeExt;
 
@@ -20,24 +19,24 @@ struct Page {
 /// Pointer must be valid.
 ///
 /// Lock must be locked.
-pub(super) unsafe fn alloc(arena: &Arena, layout: Layout) -> *mut u8 {
-    let total_size = (mem::size_of::<Page>().align_up(layout.align()) + layout.size())
-        .align_up(utils::page_size());
-    let pages = total_size / utils::page_size();
+pub(super) unsafe fn alloc<B: Backend>(arena: &Arena<B::Mutex>, layout: Layout) -> *mut u8 {
+    let total_size =
+        (mem::size_of::<Page>().align_up(layout.align()) + layout.size()).align_up(B::pagesize());
+    let pages = total_size / B::pagesize();
 
-    let index = if let Some(x) = bitset::find_zero_run(&*arena.commited(), pages) {
+    let index = if let Some(x) = bitset::find_zero_run(&*arena.commited::<B>(), pages) {
         x
     } else {
         return ptr::null_mut();
     };
 
-    let p = (arena as *const Arena as *const u8).add(index * utils::page_size()) as *mut Page;
+    let p = (arena as *const Arena<B::Mutex> as *const u8).add(index * B::pagesize()) as *mut Page;
 
-    if !sys::__haz_alloc_mcommit(p as _, total_size) {
+    if !B::mcommit(p as _, total_size) {
         return ptr::null_mut();
     }
 
-    bitset::set_range(&mut *arena.commited(), index, pages);
+    bitset::set_range(&mut *arena.commited::<B>(), index, pages);
     *arena.rc.get() += 1;
 
     ptr::addr_of_mut!((*p).p.class).write(-1);
@@ -52,73 +51,73 @@ pub(super) unsafe fn alloc(arena: &Arena, layout: Layout) -> *mut u8 {
 /// Pointers must be valid.
 ///
 /// Lock must be unlocked.
-pub(super) unsafe fn realloc_in_place(
+pub(super) unsafe fn realloc_in_place<B: Backend>(
     page: *mut super::Page,
-    arena: &Arena,
+    arena: &Arena<B::Mutex>,
     layout: Layout,
 ) -> bool {
     let page = page as *mut Page;
-    let total_size = (mem::size_of::<Page>().align_up(layout.align()) + layout.size())
-        .align_up(utils::page_size());
-    let pages = total_size / utils::page_size();
-    let old_pages = (*page).real_size / utils::page_size();
+    let total_size =
+        (mem::size_of::<Page>().align_up(layout.align()) + layout.size()).align_up(B::pagesize());
+    let pages = total_size / B::pagesize();
+    let old_pages = (*page).real_size / B::pagesize();
 
     match pages.cmp(&old_pages) {
         Ordering::Greater => {
-            Pin::new_unchecked(&arena.lock).lock();
-            let x = grow_in_place(page, arena, pages, old_pages, total_size);
-            Pin::new_unchecked(&arena.lock).unlock();
+            arena.lock.lock();
+            let x = grow_in_place::<B>(page, arena, pages, old_pages, total_size);
+            arena.lock.unlock();
             x
         }
         Ordering::Equal => true,
         Ordering::Less => {
-            Pin::new_unchecked(&arena.lock).lock();
-            let x = shrink_in_place(page, arena, pages, old_pages, total_size);
-            Pin::new_unchecked(&arena.lock).unlock();
+            arena.lock.lock();
+            let x = shrink_in_place::<B>(page, arena, pages, old_pages, total_size);
+            arena.lock.unlock();
             x
         }
     }
 }
 
 /// Lock must be locked.
-unsafe fn grow_in_place(
+unsafe fn grow_in_place<B: Backend>(
     page: *mut Page,
-    arena: &Arena,
+    arena: &Arena<B::Mutex>,
     pages: usize,
     old_pages: usize,
     total_size: usize,
 ) -> bool {
-    let index = (page as usize - arena as *const Arena as usize) / utils::page_size() + old_pages;
+    let index = (page as usize - arena as *const Arena<B::Mutex> as usize) / B::pagesize() + old_pages;
     let len = pages - old_pages;
 
-    if !bitset::is_zero_range(&*arena.commited(), index, len) {
+    if !bitset::is_zero_range(&*arena.commited::<B>(), index, len) {
         return false;
     }
-    if !sys::__haz_alloc_mcommit(
+    if !B::mcommit(
         (page as *mut u8).add((*page).real_size),
         total_size - (*page).real_size,
     ) {
         return false;
     }
-    bitset::set_range(&mut *arena.commited(), index, len);
+    bitset::set_range(&mut *arena.commited::<B>(), index, len);
     (*page).real_size = total_size;
 
     true
 }
 
 /// Lock must be locked.
-unsafe fn shrink_in_place(
+unsafe fn shrink_in_place<B: Backend>(
     page: *mut Page,
-    arena: &Arena,
+    arena: &Arena<B::Mutex>,
     pages: usize,
     old_pages: usize,
     total_size: usize,
 ) -> bool {
-    let index = (page as usize - arena as *const Arena as usize) / utils::page_size() + pages;
+    let index = (page as usize - arena as *const Arena<B::Mutex> as usize) / B::pagesize() + pages;
     let len = old_pages - pages;
 
-    bitset::clear_range(&mut *arena.commited(), index, len);
-    sys::__haz_alloc_mdecommit(
+    bitset::clear_range(&mut *arena.commited::<B>(), index, len);
+    B::mdecommit(
         (page as *mut u8).add(total_size),
         (*page).real_size - total_size,
     );
@@ -132,15 +131,15 @@ unsafe fn shrink_in_place(
 /// Pointers must be valid.
 ///
 /// Lock must be unlocked.
-pub(super) unsafe fn dealloc(page: *mut super::Page, arena: *const Arena) {
+pub(super) unsafe fn dealloc<B: Backend>(page: *mut super::Page, arena: *const Arena<B::Mutex>) {
     let page = page as *mut Page;
 
-    let index = (page as usize - arena as *const Arena as usize) / utils::page_size();
-    let len = (*page).real_size / utils::page_size();
+    let index = (page as usize - arena as usize) / B::pagesize();
+    let len = (*page).real_size / B::pagesize();
 
-    sys::__haz_alloc_mdecommit(page as _, (*page).real_size);
-    Pin::new_unchecked(&(*arena).lock).lock();
-    bitset::clear_range(&mut *(*arena).commited(), index, len);
+    B::mdecommit(page as _, (*page).real_size);
+    (*arena).lock.lock();
+    bitset::clear_range(&mut *(*arena).commited::<B>(), index, len);
     Arena::release(arena);
 }
 

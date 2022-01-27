@@ -1,6 +1,6 @@
 [package]
 name = "haz-alloc"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/nicbn/haz-alloc"
@@ -15,8 +15,11 @@ features = [
 ]
 
 [dependencies]
-haz-alloc-core = { version = "0.1", path = "../haz-alloc-core" }
+haz-alloc-core = { version = "0.2", path = "../haz-alloc-core" }
 cfg-if = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
 
 [dev-dependencies]
 haz-alloc-internal = { version = "0.0.1", path = "../haz-alloc-internal" }
