@@ -16,7 +16,7 @@ unsafe impl haz_alloc_core::Backend for Backend {
                 ptr as _,
                 size,
                 libc::PROT_READ | libc::PROT_WRITE,
-                libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED,
+                libc::MAP_ANON | libc::MAP_PRIVATE,
                 -1,
                 0,
             ) as _
@@ -30,7 +30,14 @@ unsafe impl haz_alloc_core::Backend for Backend {
 
     #[inline]
     unsafe fn mdecommit(ptr: *mut u8, size: usize) {
-        Self::mreserve(ptr, size);
+        libc::mmap(
+            ptr as _,
+            size,
+            libc::PROT_READ | libc::PROT_WRITE,
+            libc::MAP_ANON | libc::MAP_PRIVATE | libc::MAP_FIXED,
+            -1,
+            0,
+        );
     }
 
     #[inline]
