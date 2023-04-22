@@ -1,31 +1,36 @@
+# 🚧 Work in progress 🚧
+
+Currently this should not be considered production-ready.
+
 # haz-alloc
 
 ![License](https://shields.io/crates/l/haz-alloc)
 
+|                  |                |
+|------------------|----------------|
+| `haz-alloc`      | [![Crate](https://shields.io/crates/v/haz-alloc)](https://crates.io/crates/haz-alloc) [![Documentation](https://shields.io/docsrs/haz-alloc)](https://docs.rs/haz-alloc) |
+| `haz-alloc-core` | [![Crate](https://shields.io/crates/v/haz-alloc-core)](https://crates.io/crates/haz-alloc-core) [![Documentation](https://shields.io/docsrs/haz-alloc-core)](https://docs.rs/haz-alloc-core) |
+
 haz-alloc is a general-purpose allocator written in Rust, inspired by jemalloc.
 
-Currently this should not be considered production-ready.
 
-## Crates
+You probably want is the `haz-alloc` crate. It provides everything
+out-of-the-box, ready to use.
 
-### `haz-alloc`
+If you want to use on some platform that `haz-alloc` does not support, you
+can use `haz-alloc-core`, that implements the allocator, and provide the
+system functions it uses.
 
-[![Crate](https://shields.io/crates/v/haz-alloc)](https://crates.io/crates/haz-alloc)
-[![Documentation](https://shields.io/docsrs/haz-alloc)](https://docs.rs/haz-alloc)
+## Supported platforms
 
-Provides out-of-the-box allocation. Available for Windows and Unix (only Linux tested so far).
+Supported platforms by `haz-alloc`. `haz-alloc-core` is independent of platform
+and should work on pretty much anything.
 
-### `haz-alloc-core`
-
-[![Crate](https://shields.io/crates/v/haz-alloc-core)](https://crates.io/crates/haz-alloc-core)
-[![Documentation](https://shields.io/docsrs/haz-alloc-core)](https://docs.rs/haz-alloc-core)
-
-Implementation of the allocator, needs some symbols to be provided in order to
-work.
-
-### `haz-alloc-internal`
-
-Contains some internal code, not meant for user use.
+| Platform         | Supported | Tested     |
+|------------------|-----------|------------|
+| Windows          | ✔️        | ❌         |
+| Linux            | ✔️        | ✔️         |
+| Other Unix-like  | ✔️        | ❌         |
 
 ## License
 
