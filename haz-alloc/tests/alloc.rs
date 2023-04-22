@@ -1,5 +1,5 @@
 use haz_alloc::Alloc;
-use haz_alloc_internal::SMALL_CLASSES;
+use haz_alloc_core::__internal::SMALL_CLASSES;
 use std::alloc::Layout;
 
 static ALLOC: Alloc = Alloc::new();

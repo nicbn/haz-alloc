@@ -20,6 +20,3 @@ cfg-if = "1"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"
-
-[dev-dependencies]
-haz-alloc-internal = { version = "0.0.1", path = "../haz-alloc-internal" }

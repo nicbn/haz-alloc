@@ -1,10 +1,10 @@
+use crate::__internal::UsizeExt;
 use crate::backend::Backend;
 use crate::reserve::{ReserveHeader, ReserveType, RESERVE_ALIGN};
 use crate::{huge, subhuge};
 use core::alloc::{GlobalAlloc, Layout};
 use core::marker::PhantomData;
 use core::{cmp, ptr};
-use haz_alloc_internal::UsizeExt;
 
 pub struct Alloc<B> {
     _backend: PhantomData<B>,

@@ -1,7 +1,5 @@
-use haz_alloc_internal::small_class_of;
-use haz_alloc_internal::SMALL_CLASSES;
-
 use super::Arena;
+use crate::__internal::{small_class_of, SMALL_CLASSES};
 use crate::backend::RawMutex;
 use crate::bitset;
 use crate::Backend;
@@ -171,7 +169,11 @@ impl Page {
 /// Pointer must be valid.
 ///
 /// Lock must be locked.
-pub(super) unsafe fn alloc<B: Backend>(arena: &Arena<B::Mutex>, size: usize, zeroed: bool) -> *mut u8 {
+pub(super) unsafe fn alloc<B: Backend>(
+    arena: &Arena<B::Mutex>,
+    size: usize,
+    zeroed: bool,
+) -> *mut u8 {
     let class = small_class_of(size);
 
     let page = *arena.vacant[class].get();

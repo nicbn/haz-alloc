@@ -1,11 +1,11 @@
 use crate::backend::{RawMutex, TlsCallback};
 use crate::reserve::{self, ReserveHeader, ReserveType, RESERVE_ALIGN};
 use crate::Backend;
+use crate::__internal::{UsizeExt, SMALL_CLASSES, SMALL_MAX};
 use core::alloc::Layout;
 use core::cell::{Cell, UnsafeCell};
 use core::sync::atomic::{AtomicPtr, AtomicUsize, Ordering};
 use core::{mem, ptr};
-use haz_alloc_internal::{UsizeExt, SMALL_CLASSES, SMALL_MAX};
 
 mod large;
 mod small;

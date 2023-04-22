@@ -1,8 +1,8 @@
 use crate::reserve::{self, ReserveHeader, ReserveType, RESERVE_ALIGN};
 use crate::Backend;
+use crate::__internal::UsizeExt;
 use core::alloc::Layout;
 use core::{mem, ptr};
-use haz_alloc_internal::UsizeExt;
 
 #[repr(C)]
 struct Header {

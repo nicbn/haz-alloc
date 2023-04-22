@@ -1,10 +1,10 @@
 use super::Arena;
+use crate::__internal::UsizeExt;
 use crate::backend::RawMutex;
 use crate::{bitset, Backend};
 use core::alloc::Layout;
 use core::cmp::Ordering;
 use core::{mem, ptr};
-use haz_alloc_internal::UsizeExt;
 
 #[repr(C)]
 struct Page {
@@ -87,7 +87,8 @@ unsafe fn grow_in_place<B: Backend>(
     old_pages: usize,
     total_size: usize,
 ) -> bool {
-    let index = (page as usize - arena as *const Arena<B::Mutex> as usize) / B::pagesize() + old_pages;
+    let index =
+        (page as usize - arena as *const Arena<B::Mutex> as usize) / B::pagesize() + old_pages;
     let len = pages - old_pages;
 
     if !bitset::is_zero_range(&*arena.commited::<B>(), index, len) {
