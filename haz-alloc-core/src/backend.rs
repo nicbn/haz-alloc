@@ -2,14 +2,14 @@ use core::cell::Cell;
 use core::ptr;
 
 pub struct TlsCallback {
-    pub func: fn(),
+    pub func: Cell<Option<fn()>>,
     pub next: Cell<*const TlsCallback>,
 }
 
 impl TlsCallback {
-    pub const fn new(func: fn()) -> Self {
+    pub const fn new() -> Self {
         Self {
-            func,
+            func: Cell::new(None),
             next: Cell::new(ptr::null()),
         }
     }
@@ -24,8 +24,7 @@ impl TlsCallback {
 /// The implementation must make sure the functions in the trait behave
 /// properly.
 pub unsafe trait Backend {
-    type Mutex: RawMutex;
-    const MUTEX_INIT: Self::Mutex;
+    type Mutex: Mutex;
 
     /// Reserve the block of memory starting at `ptr` if `ptr` is not null and
     /// with `size`.
@@ -79,20 +78,13 @@ pub unsafe trait Backend {
 ///
 /// The implementation must make sure the functions in the trait behave
 /// properly.
-pub unsafe trait RawMutex: 'static + Sync + Send {
-    /// Lock a mutex.
-    ///
-    /// # Safety
-    ///
-    /// Mutex must not be moved.
-    unsafe fn lock(&self);
+pub unsafe trait Mutex: 'static + Sync + Send {
+    type Guard<'a>;
 
-    /// Unlock a mutex.
-    ///
-    /// # Safety
-    ///
-    /// Mutex must not be moved.
-    ///
-    /// Mutex must be locked.
-    unsafe fn unlock(&self);
+    /// Mutex initializer.
+    const INIT: Self;
+
+    /// Lock a mutex.
+    #[must_use]
+    fn lock(&self) -> Self::Guard<'_>;
 }

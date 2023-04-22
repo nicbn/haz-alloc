@@ -1,6 +1,6 @@
 [package]
 name = "haz-alloc"
-version = "0.2.1"
+version = "0.3.0"
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/nicbn/haz-alloc"
@@ -8,15 +8,15 @@ description = "A general-purpose allocator written in Rust"
 keywords = ["alloc", "allocator", "allocation"]
 categories = ["memory-management"]
 
+[dependencies]
+haz-alloc-core = { version = "0.3", path = "../haz-alloc-core" }
+cfg-if = "1"
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [target.'cfg(windows)'.dependencies.winapi]
 version = "0.3"
 features = [
     "memoryapi", "winnt", "sysinfoapi", "synchapi", "processthreadsapi", "fibersapi"
 ]
-
-[dependencies]
-haz-alloc-core = { version = "0.2", path = "../haz-alloc-core" }
-cfg-if = "1"
-
-[target.'cfg(unix)'.dependencies]
-libc = "0.2"

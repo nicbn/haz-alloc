@@ -1,6 +1,6 @@
 use super::Arena;
 use crate::__internal::{small_class_of, SMALL_CLASSES};
-use crate::backend::RawMutex;
+use crate::backend::Mutex;
 use crate::bitset;
 use crate::Backend;
 use core::cell::UnsafeCell;
@@ -26,7 +26,7 @@ impl Page {
     /// Pointer must be valid.
     ///
     /// Lock must be locked.
-    unsafe fn alloc_from_free<B: Backend>(&self, arena: &Arena<B::Mutex>, class: usize) -> *mut u8 {
+    unsafe fn alloc_from_free<B: Backend>(&self, arena: &Arena<B>, class: usize) -> *mut u8 {
         let mut free = self.free.load(Ordering::Acquire);
         while !free.is_null() {
             let next = *(free as *mut *mut u8);
@@ -35,7 +35,7 @@ impl Page {
                 .compare_exchange_weak(free, next, Ordering::Acquire, Ordering::Acquire)
             {
                 Ok(_) => {
-                    self.increase_rc::<B>(arena, class);
+                    self.increase_rc(arena, class);
                     return free;
                 }
                 Err(a) => free = a,
@@ -51,16 +51,12 @@ impl Page {
     ///
     /// Lock must be locked.
     #[inline]
-    unsafe fn alloc_from_zeroed<B: Backend>(
-        &self,
-        arena: &Arena<B::Mutex>,
-        class: usize,
-    ) -> *mut u8 {
+    unsafe fn alloc_from_zeroed<B: Backend>(&self, arena: &Arena<B>, class: usize) -> *mut u8 {
         let next_page = (self as *const Self as *mut u8).add(B::pagesize());
         let ptr = *self.zeroed.get();
         if ptr < next_page {
             *self.zeroed.get() = ptr.add(SMALL_CLASSES[self.p.class as usize]);
-            self.increase_rc::<B>(arena, class);
+            self.increase_rc(arena, class);
             return ptr;
         }
 
@@ -73,11 +69,7 @@ impl Page {
     ///
     /// Lock must be unlocked.
     #[inline]
-    unsafe fn reduce_rc<B: Backend>(
-        this: *const Page,
-        arena: *const Arena<B::Mutex>,
-        class: usize,
-    ) {
+    unsafe fn reduce_rc<B: Backend>(this: *const Page, arena: *const Arena<B>, class: usize) {
         let add_to_vacant = (*this).vacancy.fetch_add(1, Ordering::Release) == 0;
         if !add_to_vacant {
             let mut rc = (*this).rc.load(Ordering::Relaxed);
@@ -94,25 +86,21 @@ impl Page {
             }
         }
 
-        (*arena).lock.lock();
+        let guard = (*arena).lock.lock();
 
         if (*this).rc.fetch_sub(1, Ordering::Relaxed) == 1 {
             atomic::fence(Ordering::Acquire);
 
             if !add_to_vacant {
-                (*this).remove_from_vacant::<B>(&*arena, class);
+                (*this).remove_from_vacant(&*arena, class);
             }
             let index = ((this as usize) - (arena as usize)) / B::pagesize();
-            bitset::clear(&mut *(*arena).commited::<B>(), index);
+            bitset::clear(&mut *(*arena).commited(), index);
             B::mdecommit(this as _, B::pagesize());
 
-            Arena::release(arena);
-        } else {
-            if add_to_vacant {
-                (*this).add_to_vacant::<B>(&*arena, class);
-            }
-
-            (*arena).lock.unlock();
+            Arena::release(arena, guard);
+        } else if add_to_vacant {
+            (*this).add_to_vacant(&*arena, class);
         }
     }
 
@@ -121,11 +109,11 @@ impl Page {
     /// Pointer must be valid.
     ///
     /// Lock must be locked.
-    unsafe fn increase_rc<B: Backend>(&self, arena: &Arena<B::Mutex>, class: usize) {
+    unsafe fn increase_rc<B: Backend>(&self, arena: &Arena<B>, class: usize) {
         self.rc.fetch_add(1, Ordering::Relaxed);
         if self.vacancy.fetch_sub(1, Ordering::Release) == 1 {
             atomic::fence(Ordering::Acquire);
-            self.remove_from_vacant::<B>(arena, class);
+            self.remove_from_vacant(arena, class);
         }
     }
 
@@ -134,8 +122,8 @@ impl Page {
     /// Pointer must be valid.
     ///
     /// Lock must be locked.
-    unsafe fn add_to_vacant<B: Backend>(&self, arena: &Arena<B::Mutex>, class: usize) {
-        let next = *(*arena).vacant[class].get();
+    unsafe fn add_to_vacant<B: Backend>(&self, arena: &Arena<B>, class: usize) {
+        let next = *arena.vacant[class].get();
         *self.next.get() = next;
         if !next.is_null() {
             *(*next).prev.get() = self as *const _;
@@ -148,7 +136,7 @@ impl Page {
     /// Pointer must be valid.
     ///
     /// Lock must be locked.
-    unsafe fn remove_from_vacant<B: Backend>(&self, arena: &Arena<B::Mutex>, class: usize) {
+    unsafe fn remove_from_vacant<B: Backend>(&self, arena: &Arena<B>, class: usize) {
         let prev = *self.prev.get();
         let next = *self.next.get();
         if !next.is_null() {
@@ -169,27 +157,23 @@ impl Page {
 /// Pointer must be valid.
 ///
 /// Lock must be locked.
-pub(super) unsafe fn alloc<B: Backend>(
-    arena: &Arena<B::Mutex>,
-    size: usize,
-    zeroed: bool,
-) -> *mut u8 {
+pub(super) unsafe fn alloc<B: Backend>(arena: &Arena<B>, size: usize, zeroed: bool) -> *mut u8 {
     let class = small_class_of(size);
 
     let page = *arena.vacant[class].get();
     if !page.is_null() {
         if !zeroed {
-            let ptr = (*page).alloc_from_free::<B>(arena, class);
+            let ptr = (*page).alloc_from_free(arena, class);
             if !ptr.is_null() {
                 return ptr;
             }
-            return (*page).alloc_from_zeroed::<B>(arena, class);
+            return (*page).alloc_from_zeroed(arena, class);
         } else {
-            let ptr = (*page).alloc_from_zeroed::<B>(arena, class);
+            let ptr = (*page).alloc_from_zeroed(arena, class);
             if !ptr.is_null() {
                 return ptr;
             }
-            let ptr = (*page).alloc_from_free::<B>(arena, class);
+            let ptr = (*page).alloc_from_free(arena, class);
             if !ptr.is_null() {
                 ptr.write_bytes(0, size);
             }
@@ -197,7 +181,7 @@ pub(super) unsafe fn alloc<B: Backend>(
         }
     }
 
-    let index = if let Some(x) = bitset::find_zero(&*arena.commited::<B>()) {
+    let index = if let Some(x) = bitset::find_zero(&*arena.commited()) {
         x
     } else {
         return ptr::null_mut();
@@ -205,12 +189,12 @@ pub(super) unsafe fn alloc<B: Backend>(
 
     let pagesize = B::pagesize();
 
-    let page = (arena as *const Arena<B::Mutex> as *const u8).add(index * pagesize) as *mut Page;
+    let page = (arena as *const Arena<B> as *const u8).add(index * pagesize) as *mut Page;
 
     if !B::mcommit(page as _, pagesize) {
         return ptr::null_mut();
     }
-    bitset::set(&mut *arena.commited::<B>(), index);
+    bitset::set(&mut *arena.commited(), index);
 
     *arena.rc.get() += 1;
 
@@ -224,7 +208,7 @@ pub(super) unsafe fn alloc<B: Backend>(
     (*page).free = AtomicPtr::new(ptr.add(size));
 
     if vacancy > 0 {
-        (*page).add_to_vacant::<B>(arena, class);
+        (*page).add_to_vacant(arena, class);
     }
 
     ptr
@@ -245,7 +229,7 @@ pub(super) fn realloc_in_place(class: isize, size: usize) -> bool {
 /// Lock must be unlocked.
 pub(super) unsafe fn dealloc<B: Backend>(
     page: *const Page,
-    arena: *const Arena<B::Mutex>,
+    arena: *const Arena<B>,
     x: *mut u8,
     class: isize,
 ) {
@@ -261,5 +245,5 @@ pub(super) unsafe fn dealloc<B: Backend>(
         }
     }
 
-    Page::reduce_rc::<B>(page, arena, class as usize)
+    Page::reduce_rc(page, arena, class as usize)
 }

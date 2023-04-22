@@ -1,14 +1,11 @@
-use crate::sys_common;
+use crate::sys_common::{self, MutexAdapter};
 use haz_alloc_core::backend::TlsCallback;
-use std::cell::UnsafeCell;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct Backend;
 
 unsafe impl haz_alloc_core::Backend for Backend {
-    type Mutex = Mutex;
-
-    const MUTEX_INIT: Mutex = Mutex(UnsafeCell::new(libc::PTHREAD_MUTEX_INITIALIZER));
+    type Mutex = MutexAdapter;
 
     fn mreserve(ptr: *mut u8, size: usize) -> *mut u8 {
         unsafe {
@@ -64,23 +61,5 @@ unsafe impl haz_alloc_core::Backend for Backend {
 
     unsafe fn tls_attach(callback: *const TlsCallback) {
         sys_common::tls_attach(callback)
-    }
-}
-
-pub struct Mutex(UnsafeCell<libc::pthread_mutex_t>);
-
-unsafe impl Send for Mutex {}
-
-unsafe impl Sync for Mutex {}
-
-unsafe impl haz_alloc_core::backend::RawMutex for Mutex {
-    #[inline]
-    unsafe fn lock(&self) {
-        libc::pthread_mutex_lock(self.0.get());
-    }
-
-    #[inline]
-    unsafe fn unlock(&self) {
-        libc::pthread_mutex_unlock(self.0.get());
     }
 }
