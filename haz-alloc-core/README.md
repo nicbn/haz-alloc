@@ -1,14 +1,9 @@
-<span style="text-align:center">
-
 # haz-alloc-core
 
 [![Crate](https://shields.io/crates/v/haz-alloc-core?style=for-the-badge)](https://crates.io/crates/haz-alloc-core)
 [![Documentation](https://shields.io/docsrs/haz-alloc-core?style=for-the-badge)](https://docs.rs/haz-alloc-core)
-
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nicbn/haz-alloc/rust.yml?style=for-the-badge)
-![License](https://shields.io/crates/l/haz-alloc?style=for-the-badge)
-
-</span>
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nicbn/haz-alloc/rust.yml?style=for-the-badge)](https://github.com/nicbn/haz-alloc/actions)
+[![License](https://shields.io/crates/l/haz-alloc?style=for-the-badge)](#license)
 
 Platform-independent implementation of haz-alloc.
 

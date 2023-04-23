@@ -2,17 +2,12 @@
 
 Currently this should not be considered production-ready.
 
-<span style="text-align:center">
-
 # haz-alloc
 
 [![Crate](https://shields.io/crates/v/haz-alloc?style=for-the-badge)](https://crates.io/crates/haz-alloc)
 [![Documentation](https://shields.io/docsrs/haz-alloc?style=for-the-badge)](https://docs.rs/haz-alloc)
-
-![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nicbn/haz-alloc/rust.yml?style=for-the-badge)
-![License](https://shields.io/crates/l/haz-alloc?style=for-the-badge)
-
-</span>
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nicbn/haz-alloc/rust.yml?style=for-the-badge)](https://github.com/nicbn/haz-alloc/actions)
+[![License](https://shields.io/crates/l/haz-alloc?style=for-the-badge)](#license)
 
 haz-alloc is a general-purpose allocator written in Rust, inspired by jemalloc.
 
