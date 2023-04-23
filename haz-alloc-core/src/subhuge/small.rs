@@ -4,7 +4,7 @@ use crate::backend::Mutex;
 use crate::bitset;
 use crate::Backend;
 use core::cell::UnsafeCell;
-use core::ptr;
+use core::{ptr, mem};
 use core::sync::atomic::{self, AtomicPtr, AtomicUsize, Ordering};
 
 #[repr(C)]
@@ -205,7 +205,10 @@ pub(super) unsafe fn alloc<B: Backend>(arena: &Arena<B>, size: usize, zeroed: bo
     ptr = ptr.add(ptr.align_offset(size.next_power_of_two() / 2));
     let vacancy = (pagesize - (ptr.add(size) as usize - page as usize)) / size;
     (*page).vacancy = AtomicUsize::new(vacancy);
-    (*page).free = AtomicPtr::new(ptr.add(size));
+
+    let mut free = ptr.add(size);
+    free = free.add(free.align_offset(mem::size_of::<usize>()));
+    (*page).free = AtomicPtr::new(free);
 
     if vacancy > 0 {
         (*page).add_to_vacant(arena, class);
