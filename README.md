@@ -19,6 +19,8 @@ If you want to use on some platform that `haz-alloc` does not support, you
 can use `haz-alloc-core`, that implements the allocator, and provide the
 system functions it uses.
 
+**This crate requires the nightly version of Rust.**
+
 ## Supported platforms
 
 Supported platforms by `haz-alloc`. `haz-alloc-core` is independent of platform
