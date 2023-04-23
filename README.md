@@ -2,35 +2,36 @@
 
 Currently this should not be considered production-ready.
 
+<span style="text-align:center">
+
 # haz-alloc
 
-| Crate            | Useful links   |
-|------------------|----------------|
-| `haz-alloc`      | [![Crate](https://shields.io/crates/v/haz-alloc)](https://crates.io/crates/haz-alloc) [![Documentation](https://shields.io/docsrs/haz-alloc)](https://docs.rs/haz-alloc) ![License](https://shields.io/crates/l/haz-alloc) |
-| `haz-alloc-core` | [![Crate](https://shields.io/crates/v/haz-alloc-core)](https://crates.io/crates/haz-alloc-core) [![Documentation](https://shields.io/docsrs/haz-alloc-core)](https://docs.rs/haz-alloc-core) ![License](https://shields.io/crates/l/haz-alloc) |
+[![Crate](https://shields.io/crates/v/haz-alloc?style=for-the-badge)](https://crates.io/crates/haz-alloc)
+[![Documentation](https://shields.io/docsrs/haz-alloc?style=for-the-badge)](https://docs.rs/haz-alloc)
+
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/nicbn/haz-alloc/rust.yml?style=for-the-badge)
+![License](https://shields.io/crates/l/haz-alloc?style=for-the-badge)
+
+</span>
 
 haz-alloc is a general-purpose allocator written in Rust, inspired by jemalloc.
-
-
-You probably want is the `haz-alloc` crate. It provides everything
-out-of-the-box, ready to use.
-
-If you want to use on some platform that `haz-alloc` does not support, you
-can use `haz-alloc-core`, that implements the allocator, and provide the
-system functions it uses.
 
 **This crate requires the nightly version of Rust.**
 
 ## Supported platforms
 
-Supported platforms by `haz-alloc`. `haz-alloc-core` is independent of platform
-and should work on pretty much anything.
+Supported platforms by `haz-alloc`.
 
 | Platform         | Supported | Tested     |
 |------------------|-----------|------------|
-| Windows          | ✔️        | ❌         |
+| Windows          | ✔️        | ✔️         |
 | Linux            | ✔️        | ✔️         |
+| Mac OS           | ✔️        | ✔️         |
 | Other Unix-like  | ✔️        | ❌         |
+
+If you want to use on some platform that `haz-alloc` does not support, you
+can use [`haz-alloc-core`](haz-alloc-core), that implements the allocator, and provide the
+system functions it uses.
 
 ## License
 
