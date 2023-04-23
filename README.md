@@ -17,12 +17,12 @@ haz-alloc is a general-purpose allocator written in Rust, inspired by jemalloc.
 
 Supported platforms by `haz-alloc`.
 
-| Platform         | Supported | Tested     |
-|------------------|-----------|------------|
-| Windows          | ✔️        | ✔️         |
-| Linux            | ✔️        | ✔️         |
-| Mac OS           | ✔️        | ✔️         |
-| Other Unix-like  | ✔️        | ❌         |
+| Platform         | Supported | Tested (C.I.) |
+|------------------|-----------|---------------|
+| Windows          | ✔️        | ✔️            |
+| Linux            | ✔️        | ✔️            |
+| Mac OS           | ✔️        | ✔️            |
+| Other Unix-like  | ✔️        | ❌            |
 
 If you want to use on some platform that `haz-alloc` does not support, you
 can use [`haz-alloc-core`](haz-alloc-core), that implements the allocator, and provide the
@@ -44,5 +44,3 @@ at your option.
 Unless you explicitly state otherwise, any contribution intentionally submitted
 for inclusion in the work by you, as defined in the Apache-2.0 license, shall be
 dual licensed as above, without any additional terms or conditions.
-
-Besides the dual MIT/Apache-2.0 license, another common licensing approach used
