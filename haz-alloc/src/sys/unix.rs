@@ -1,5 +1,6 @@
 use crate::sys_common::{self, MutexAdapter};
 use haz_alloc_core::backend::TlsCallback;
+use std::ptr;
 use std::sync::atomic::{AtomicUsize, Ordering};
 
 pub struct Backend;
@@ -8,7 +9,7 @@ unsafe impl haz_alloc_core::Backend for Backend {
     type Mutex = MutexAdapter;
 
     fn mreserve(ptr: *mut u8, size: usize) -> *mut u8 {
-        unsafe {
+        let ptr = unsafe {
             libc::mmap(
                 ptr as _,
                 size,
@@ -16,7 +17,13 @@ unsafe impl haz_alloc_core::Backend for Backend {
                 libc::MAP_ANON | libc::MAP_PRIVATE,
                 -1,
                 0,
-            ) as _
+            )
+        };
+
+        if ptr == libc::MAP_FAILED {
+            ptr::null_mut()
+        } else {
+            ptr as _
         }
     }
 
