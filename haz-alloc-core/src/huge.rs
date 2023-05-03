@@ -72,7 +72,7 @@ pub unsafe fn realloc_in_place<B: Backend>(
 
 pub unsafe fn dealloc<B: Backend>(header: *mut ReserveHeader) {
     let header = header as *mut Header;
-    reserve::delete(B::munreserve, ptr::addr_of_mut!((*header).r));
+    reserve::delete::<B>(ptr::addr_of_mut!((*header).r));
 }
 
 pub unsafe fn size(header: *mut ReserveHeader, ptr: *mut u8) -> usize {

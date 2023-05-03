@@ -46,7 +46,7 @@ pub fn new<B: Backend>(size: usize, ty: ReserveType) -> (usize, *mut ReserveHead
 }
 
 #[inline]
-pub unsafe fn delete(munreserve: unsafe fn(ptr: *mut u8, size: usize), ptr: *mut ReserveHeader) {
+pub unsafe fn delete<B: Backend>(ptr: *mut ReserveHeader) {
     let offset = (*ptr).offset;
-    munreserve((ptr as *mut u8).sub(offset as usize), (*ptr).size);
+    B::munreserve((ptr as *mut u8).sub(offset as usize), (*ptr).size);
 }

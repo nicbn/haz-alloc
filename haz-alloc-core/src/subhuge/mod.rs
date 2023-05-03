@@ -102,7 +102,6 @@ struct Page {
 struct Arena<B: Backend> {
     page: small::Page,
 
-    munreserve: unsafe fn(ptr: *mut u8, size: usize),
     rc: UnsafeCell<usize>,
     vacant: [UnsafeCell<*const small::Page>; SMALL_CLASSES.len()],
     lock: B::Mutex,
@@ -116,7 +115,7 @@ impl<B: Backend> Arena<B> {
         *(*this).rc.get() -= 1;
         if *(*this).rc.get() == 0 {
             drop(guard);
-            reserve::delete((*this).munreserve, ptr::addr_of!((*this).page.p.r) as _);
+            reserve::delete::<B>(ptr::addr_of!((*this).page.p.r) as _);
         }
     }
 }
@@ -178,8 +177,6 @@ impl<B: Backend> Arena<B> {
                 (B::pagesize() - (start as usize - ptr as usize)) / SMALL_CLASSES[0],
             );
             (*ptr).page.zeroed = UnsafeCell::new(start);
-
-            (*ptr).munreserve = B::munreserve;
 
             (*ptr).rc = UnsafeCell::new(1);
             ptr::addr_of_mut!((*ptr).lock).write(B::Mutex::INIT);
