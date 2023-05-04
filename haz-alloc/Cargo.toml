@@ -1,6 +1,6 @@
 [package]
 name = "haz-alloc"
-version = "0.3.0"
+version = "0.3.1"
 edition = "2018"
 license = "MIT OR Apache-2.0"
 repository = "https://github.com/nicbn/haz-alloc"
@@ -9,7 +9,7 @@ keywords = ["alloc", "allocator", "allocation"]
 categories = ["memory-management"]
 
 [dependencies]
-haz-alloc-core = { version = "0.3", path = "../haz-alloc-core" }
+haz-alloc-core = { version = "0.4", path = "../haz-alloc-core" }
 cfg-if = "1"
 
 [target.'cfg(unix)'.dependencies]
