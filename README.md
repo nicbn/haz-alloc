@@ -21,12 +21,17 @@ Supported platforms by `haz-alloc`.
 |------------------|-----------|---------------|
 | Windows          | ✔️        | ✔️            |
 | Linux            | ✔️        | ✔️            |
-| Mac OS           | ✔️        | ✔️            |
-| Other Unix-like  | ✔️        | ❌            |
+| Mac OS           | ❌        | ❌            |
+| Other Unix-like  | Untested  | ❌            |
 
 If you want to use on some platform that `haz-alloc` does not support, you
 can use [`haz-alloc-core`](haz-alloc-core), that implements the allocator, and provide the
 system functions it uses.
+
+Do not depend on both `haz-alloc` and `haz-alloc-core` on the same crate.
+`haz-alloc` may bump its `haz-alloc-core` depedency major version while
+only bumping its minor version, which will cause breakage if both are
+being depended on.
 
 ## License
 
