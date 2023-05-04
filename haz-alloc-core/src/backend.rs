@@ -81,10 +81,20 @@ pub unsafe trait Backend {
 pub unsafe trait Mutex: 'static + Sync + Send {
     type Guard<'a>;
 
-    /// Mutex initializer.
-    const INIT: Self;
+    /// Creates a mutex.
+    ///
+    /// # Safety
+    /// 
+    /// The mutex must not be moved until dropped.
+    /// The mutex must not be initialized.
+    unsafe fn new(ptr: *mut Self);
 
     /// Lock a mutex.
+    /// 
+    /// # Safety
+    /// 
+    /// The mutex must not be moved until dropped.
+    /// The mutex must be initialized.
     #[must_use]
-    fn lock(&self) -> Self::Guard<'_>;
+    unsafe fn lock(&self) -> Self::Guard<'_>;
 }

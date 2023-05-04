@@ -13,6 +13,7 @@ haz-alloc-core = { version = "0.3", path = "../haz-alloc-core" }
 cfg-if = "1"
 
 [target.'cfg(unix)'.dependencies]
+errno = { version = "0.3", default_features = false }
 libc = "0.2"
 
 [target.'cfg(windows)'.dependencies.winapi]

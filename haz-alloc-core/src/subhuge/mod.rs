@@ -56,7 +56,7 @@ where
     static TLS_ARENA: ArenaCell = ArenaCell::new();
     #[thread_local]
     static CALLBACK: TlsCallback = TlsCallback::new();
-    
+
     #[cold]
     fn slow<B: Backend>() {
         CALLBACK.func.set(Some(|| {
@@ -74,7 +74,7 @@ where
                         return;
                     }
                 }
-        
+
                 let guard = unsafe { (*arena).lock.lock() };
                 unsafe { Arena::release(arena, guard) };
             }
@@ -115,6 +115,8 @@ impl<B: Backend> Arena<B> {
         *(*this).rc.get() -= 1;
         if *(*this).rc.get() == 0 {
             drop(guard);
+            let this = this as *mut Self;
+            ptr::drop_in_place(ptr::addr_of_mut!((*this).lock));
             reserve::delete::<B>(ptr::addr_of!((*this).page.p.r) as _);
         }
     }
@@ -179,7 +181,7 @@ impl<B: Backend> Arena<B> {
             (*ptr).page.zeroed = UnsafeCell::new(start);
 
             (*ptr).rc = UnsafeCell::new(1);
-            ptr::addr_of_mut!((*ptr).lock).write(B::Mutex::INIT);
+            B::Mutex::new(ptr::addr_of_mut!((*ptr).lock));
             (*ptr).vacant[0] = UnsafeCell::new(&(*ptr).page);
             (*(*ptr).commited())[0] = 1;
         }

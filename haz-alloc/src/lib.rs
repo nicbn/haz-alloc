@@ -1,4 +1,5 @@
-#![allow(clippy::non_send_fields_in_send_ty)]
+#![feature(linkage)]
+#![warn(clippy::all)]
 
 use std::alloc::{GlobalAlloc, Layout};
 

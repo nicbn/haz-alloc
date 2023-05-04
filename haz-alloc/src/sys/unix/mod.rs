@@ -1,12 +1,15 @@
-use crate::sys_common::{self, MutexAdapter};
+use self::mutex::Mutex;
+use crate::sys_common;
+use core::ptr;
+use core::sync::atomic::{AtomicUsize, Ordering};
 use haz_alloc_core::backend::TlsCallback;
-use std::ptr;
-use std::sync::atomic::{AtomicUsize, Ordering};
+
+mod mutex;
 
 pub struct Backend;
 
 unsafe impl haz_alloc_core::Backend for Backend {
-    type Mutex = MutexAdapter;
+    type Mutex = Mutex;
 
     fn mreserve(ptr: *mut u8, size: usize) -> *mut u8 {
         let ptr = unsafe {
@@ -32,7 +35,6 @@ unsafe impl haz_alloc_core::Backend for Backend {
         true
     }
 
-    #[inline]
     unsafe fn mdecommit(ptr: *mut u8, size: usize) {
         libc::mmap(
             ptr as _,

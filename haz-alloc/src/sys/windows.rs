@@ -1,4 +1,4 @@
-use crate::sys_common::{self, MutexAdapter};
+use crate::sys_common;
 use haz_alloc_core::backend::TlsCallback;
 use std::cell::UnsafeCell;
 use std::mem::MaybeUninit;
@@ -9,10 +9,40 @@ use winapi::um::synchapi::*;
 use winapi::um::sysinfoapi::*;
 use winapi::um::winnt::*;
 
+pub struct Mutex(UnsafeCell<SRWLOCK>);
+
+unsafe impl Send for Mutex {}
+
+unsafe impl Sync for Mutex {}
+
+unsafe impl haz_alloc_core::backend::Mutex for Mutex {
+    type Guard<'a> = MutexGuard<'a>;
+
+    #[inline]
+    unsafe fn new(ptr: *mut Self) {
+        ptr.write(Self(UnsafeCell::new(SRWLOCK_INIT)));
+    }
+
+    #[inline]
+    unsafe fn lock(&self) -> Self::Guard<'_> {
+        AcquireSRWLockExclusive(self.0.get());
+        MutexGuard(self)
+    }
+}
+
+pub struct MutexGuard<'a>(&'a Mutex);
+
+impl Drop for MutexGuard<'_> {
+    #[inline]
+    fn drop(&mut self) {
+        unsafe { ReleaseSRWLockExclusive(self.0 .0.get()) };
+    }
+}
+
 pub struct Backend;
 
 unsafe impl haz_alloc_core::Backend for Backend {
-    type Mutex = MutexAdapter;
+    type Mutex = Mutex;
 
     fn mreserve(ptr: *mut u8, size: usize) -> *mut u8 {
         unsafe { VirtualAlloc(ptr as _, size, MEM_RESERVE, PAGE_NOACCESS) as _ }
